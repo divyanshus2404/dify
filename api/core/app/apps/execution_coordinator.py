@@ -7,8 +7,8 @@ from collections.abc import Callable
 from enum import Enum, auto
 
 from configs import dify_config
+from core.app.apps.workflow.command_channels import send_abort_command
 from extensions.ext_redis import redis_client
-from graphon.graph_engine.manager import GraphEngineManager
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +159,7 @@ class AppExecutionCoordinator:
             )
 
         try:
-            GraphEngineManager(redis_client).send_stop_command(self._task_id, reason=reason)
+            send_abort_command(self._task_id, reason=reason)
         except Exception:
             logger.exception(
                 "Failed to send stop command for app execution task=%s attempt=%s",
