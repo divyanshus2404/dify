@@ -20,6 +20,7 @@ from controllers.console.app.mcp_server import (
 from controllers.console.wraps import RBACPermission, RBACResourceScope
 from models.enums import AppMCPServerStatus
 from models.model import AppMCPServer
+from tests.unit_tests.config_override import config_overrides_context
 
 
 class _ValidatedResponse:
@@ -293,7 +294,7 @@ class TestAppMCPServerRefreshController:
 
         current_user = SimpleNamespace(id="account-1")
         with (
-            patch("controllers.common.wraps.dify_config.RBAC_ENABLED", True),
+            config_overrides_context(RBAC_ENABLED=True),
             patch(
                 "controllers.common.wraps.current_account_with_tenant",
                 return_value=(current_user, "tenant-1"),
