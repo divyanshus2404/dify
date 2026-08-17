@@ -332,13 +332,15 @@ class TestIndexingRunnerExtract:
 
         # Mock the entire _extract method to avoid ExtractSetting validation
         # This is necessary because ExtractSetting uses Pydantic validation
-        with patch.object(runner, "_update_document_index_status"):
-            with patch("core.indexing_runner.select"):
-                with patch("core.indexing_runner.ExtractSetting"):
-                    # Act: Call the extract method
-                    result = runner._extract(
-                        mock_processor, sample_dataset_document, sample_process_rule, mock_dependencies["session"]
-                    )
+        with (
+            patch.object(runner, "_update_document_index_status"),
+            patch("core.indexing_runner.select"),
+            patch("core.indexing_runner.ExtractSetting"),
+        ):
+            # Act: Call the extract method
+            result = runner._extract(
+                mock_processor, sample_dataset_document, sample_process_rule, mock_dependencies["session"]
+            )
 
         # Assert: Verify the extraction results
         assert len(result) == 2, "Should extract 2 documents from the PDF"
@@ -1027,10 +1029,11 @@ class TestIndexingRunnerRun:
         mock_dependencies["factory"].return_value.init_index_processor.return_value = mock_processor
 
         # Mock _extract to raise DocumentIsPausedError
-        with patch.object(runner, "_extract", side_effect=DocumentIsPausedError("Document paused")):
-            # Act & Assert
-            with pytest.raises(DocumentIsPausedError):
-                runner.run([doc], mock_dependencies["session"])
+        with (
+            patch.object(runner, "_extract", side_effect=DocumentIsPausedError("Document paused")),
+            pytest.raises(DocumentIsPausedError),
+        ):
+            runner.run([doc], mock_dependencies["session"])
 
     @patch.object(Account, "set_tenant_id_with_session", autospec=True)
     def test_run_counts_each_transformed_document_once(
@@ -1967,13 +1970,15 @@ class TestIndexingRunnerProcessChunk:
         session_context.__enter__.return_value = mock_dependencies["session"]
         session_context.__exit__.return_value = None
 
-        with patch("core.indexing_runner.session_factory.create_session", return_value=session_context):
-            # Act & Assert - the method creates its own app_context and session
-            with pytest.raises(DocumentIsPausedError):
-                runner._process_chunk(
-                    mock_flask_app,
-                    IndexStructureType.PARAGRAPH_INDEX,
-                    chunk_documents,
-                    mock_dataset.id,
-                    mock_dataset_document.id,
-                )
+        # Act & Assert - the method creates its own app_context and session
+        with (
+            patch("core.indexing_runner.session_factory.create_session", return_value=session_context),
+            pytest.raises(DocumentIsPausedError),
+        ):
+            runner._process_chunk(
+                mock_flask_app,
+                IndexStructureType.PARAGRAPH_INDEX,
+                chunk_documents,
+                mock_dataset.id,
+                mock_dataset_document.id,
+            )

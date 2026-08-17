@@ -55,18 +55,16 @@ def test_load_app_raises_not_found_for_non_uuid_app_id():
 
 def test_load_app_raises_not_found_when_missing():
     data = _make_auth_data(path_params={"app_id": _VALID_APP_UUID})
-    with patch("controllers.openapi.auth.prepare.AppService.get_app_by_id", return_value=None):
-        with pytest.raises(NotFound):
-            load_app(data)
+    with patch("controllers.openapi.auth.prepare.AppService.get_app_by_id", return_value=None), pytest.raises(NotFound):
+        load_app(data)
 
 
 def test_load_app_raises_not_found_when_not_normal():
     app = MagicMock()
     app.status = "archived"
     data = _make_auth_data(path_params={"app_id": _VALID_APP_UUID})
-    with patch("controllers.openapi.auth.prepare.AppService.get_app_by_id", return_value=app):
-        with pytest.raises(NotFound):
-            load_app(data)
+    with patch("controllers.openapi.auth.prepare.AppService.get_app_by_id", return_value=app), pytest.raises(NotFound):
+        load_app(data)
 
 
 def test_load_app_stashes_app_even_when_api_disabled():
@@ -112,18 +110,22 @@ def test_load_tenant_raises_forbidden_when_archived():
     tenant = MagicMock()
     tenant.status = TenantStatus.ARCHIVE
     data = _make_auth_data(app=app)
-    with patch("controllers.openapi.auth.prepare.TenantService.get_tenant_by_id", return_value=tenant):
-        with pytest.raises(Forbidden):
-            load_tenant(data)
+    with (
+        patch("controllers.openapi.auth.prepare.TenantService.get_tenant_by_id", return_value=tenant),
+        pytest.raises(Forbidden),
+    ):
+        load_tenant(data)
 
 
 def test_load_tenant_raises_forbidden_when_missing():
     app = MagicMock()
     app.tenant_id = uuid.uuid4()
     data = _make_auth_data(app=app)
-    with patch("controllers.openapi.auth.prepare.TenantService.get_tenant_by_id", return_value=None):
-        with pytest.raises(Forbidden):
-            load_tenant(data)
+    with (
+        patch("controllers.openapi.auth.prepare.TenantService.get_tenant_by_id", return_value=None),
+        pytest.raises(Forbidden),
+    ):
+        load_tenant(data)
 
 
 def test_load_tenant_raises_500_when_app_not_loaded():
@@ -166,9 +168,11 @@ def test_load_account_sets_current_tenant_when_tenant_present(sqlite_session: Se
 
 def test_load_account_raises_unauthorized_when_not_found():
     data = _make_auth_data(account_id=uuid.uuid4())
-    with patch("controllers.openapi.auth.prepare.AccountService.get_account_by_id", return_value=None):
-        with pytest.raises(Unauthorized):
-            load_account(data)
+    with (
+        patch("controllers.openapi.auth.prepare.AccountService.get_account_by_id", return_value=None),
+        pytest.raises(Unauthorized),
+    ):
+        load_account(data)
 
 
 def test_resolve_external_user_writes_caller():
@@ -233,9 +237,11 @@ def test_load_tenant_from_request_from_path_params(flask_app):
     tenant.status = "normal"
     wid = str(uuid.uuid4())
     data = _make_auth_data(path_params={"workspace_id": wid})
-    with flask_app.test_request_context("/test"):
-        with patch("controllers.openapi.auth.prepare.TenantService.get_tenant_by_id", return_value=tenant):
-            load_tenant_from_request(data)
+    with (
+        flask_app.test_request_context("/test"),
+        patch("controllers.openapi.auth.prepare.TenantService.get_tenant_by_id", return_value=tenant),
+    ):
+        load_tenant_from_request(data)
     assert data.tenant is tenant
 
 
@@ -244,9 +250,11 @@ def test_load_tenant_from_request_from_query_param(flask_app):
     tenant.status = "normal"
     wid = str(uuid.uuid4())
     data = _make_auth_data(path_params={})
-    with flask_app.test_request_context(f"/test?workspace_id={wid}"):
-        with patch("controllers.openapi.auth.prepare.TenantService.get_tenant_by_id", return_value=tenant):
-            load_tenant_from_request(data)
+    with (
+        flask_app.test_request_context(f"/test?workspace_id={wid}"),
+        patch("controllers.openapi.auth.prepare.TenantService.get_tenant_by_id", return_value=tenant),
+    ):
+        load_tenant_from_request(data)
     assert data.tenant is tenant
 
 
@@ -260,18 +268,19 @@ def test_load_tenant_from_request_skips_when_already_set(flask_app):
 
 def test_load_tenant_from_request_raises_not_found_when_no_id(flask_app):
     data = _make_auth_data(path_params={})
-    with flask_app.test_request_context("/test"):
-        with pytest.raises(NotFound):
-            load_tenant_from_request(data)
+    with flask_app.test_request_context("/test"), pytest.raises(NotFound):
+        load_tenant_from_request(data)
 
 
 def test_load_tenant_from_request_raises_not_found_when_missing(flask_app):
     wid = str(uuid.uuid4())
     data = _make_auth_data(path_params={"workspace_id": wid})
-    with flask_app.test_request_context("/test"):
-        with patch("controllers.openapi.auth.prepare.TenantService.get_tenant_by_id", return_value=None):
-            with pytest.raises(NotFound):
-                load_tenant_from_request(data)
+    with (
+        flask_app.test_request_context("/test"),
+        patch("controllers.openapi.auth.prepare.TenantService.get_tenant_by_id", return_value=None),
+        pytest.raises(NotFound),
+    ):
+        load_tenant_from_request(data)
 
 
 def test_load_tenant_from_request_raises_not_found_when_archived(flask_app):
@@ -281,17 +290,18 @@ def test_load_tenant_from_request_raises_not_found_when_archived(flask_app):
     tenant.status = TenantStatus.ARCHIVE
     wid = str(uuid.uuid4())
     data = _make_auth_data(path_params={"workspace_id": wid})
-    with flask_app.test_request_context("/test"):
-        with patch("controllers.openapi.auth.prepare.TenantService.get_tenant_by_id", return_value=tenant):
-            with pytest.raises(NotFound):
-                load_tenant_from_request(data)
+    with (
+        flask_app.test_request_context("/test"),
+        patch("controllers.openapi.auth.prepare.TenantService.get_tenant_by_id", return_value=tenant),
+        pytest.raises(NotFound),
+    ):
+        load_tenant_from_request(data)
 
 
 def test_load_tenant_from_request_raises_not_found_when_invalid_uuid(flask_app):
     data = _make_auth_data(path_params={"workspace_id": "not-a-uuid"})
-    with flask_app.test_request_context("/test"):
-        with pytest.raises(NotFound):
-            load_tenant_from_request(data)
+    with flask_app.test_request_context("/test"), pytest.raises(NotFound):
+        load_tenant_from_request(data)
 
 
 # --- load_workspace_role ---

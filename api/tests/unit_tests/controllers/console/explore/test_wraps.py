@@ -65,12 +65,14 @@ def test_installed_app_required_not_found(
     def view(installed_app):
         return "ok"
 
-    with patch(
-        "controllers.console.explore.wraps.current_account_with_tenant",
-        return_value=(MagicMock(), tenant_id),
+    with (
+        patch(
+            "controllers.console.explore.wraps.current_account_with_tenant",
+            return_value=(MagicMock(), tenant_id),
+        ),
+        pytest.raises(NotFound),
     ):
-        with pytest.raises(NotFound):
-            view(str(uuid4()))
+        view(str(uuid4()))
 
 
 @pytest.mark.parametrize("sqlite_session", [(InstalledApp, App)], indirect=True)
@@ -89,12 +91,14 @@ def test_installed_app_required_app_deleted(
     def view(installed_app):
         return "ok"
 
-    with patch(
-        "controllers.console.explore.wraps.current_account_with_tenant",
-        return_value=(MagicMock(), tenant_id),
+    with (
+        patch(
+            "controllers.console.explore.wraps.current_account_with_tenant",
+            return_value=(MagicMock(), tenant_id),
+        ),
+        pytest.raises(NotFound),
     ):
-        with pytest.raises(NotFound):
-            view(installed_app_id)
+        view(installed_app_id)
 
     assert sqlite_session.get(InstalledApp, installed_app_id) is None
 
@@ -148,9 +152,9 @@ def test_user_allowed_to_access_app_denied():
             "controllers.console.explore.wraps.EnterpriseService.WebAppAuth.is_user_allowed_to_access_webapp",
             return_value=False,
         ),
+        pytest.raises(AppAccessDeniedError),
     ):
-        with pytest.raises(AppAccessDeniedError):
-            view(installed_app)
+        view(installed_app)
 
 
 def test_user_allowed_to_access_app_success():
@@ -191,12 +195,14 @@ def test_trial_app_required_not_allowed(
     def view(app):
         return "ok"
 
-    with patch(
-        "controllers.console.explore.wraps.current_account_with_tenant",
-        return_value=(MagicMock(id=str(uuid4())), None),
+    with (
+        patch(
+            "controllers.console.explore.wraps.current_account_with_tenant",
+            return_value=(MagicMock(id=str(uuid4())), None),
+        ),
+        pytest.raises(TrialAppNotAllowed),
     ):
-        with pytest.raises(TrialAppNotAllowed):
-            view(str(uuid4()))
+        view(str(uuid4()))
 
 
 @pytest.mark.parametrize("sqlite_session", [(TrialApp, App, AccountTrialAppRecord)], indirect=True)
@@ -216,12 +222,14 @@ def test_trial_app_required_limit_exceeded(
     def view(app):
         return "ok"
 
-    with patch(
-        "controllers.console.explore.wraps.current_account_with_tenant",
-        return_value=(MagicMock(id=account_id), None),
+    with (
+        patch(
+            "controllers.console.explore.wraps.current_account_with_tenant",
+            return_value=(MagicMock(id=account_id), None),
+        ),
+        pytest.raises(TrialAppLimitExceeded),
     ):
-        with pytest.raises(TrialAppLimitExceeded):
-            view(app.id)
+        view(app.id)
 
 
 @pytest.mark.parametrize("sqlite_session", [(TrialApp, App, AccountTrialAppRecord)], indirect=True)
@@ -255,12 +263,14 @@ def test_trial_feature_enable_disabled():
     def view():
         return "ok"
 
-    with patch(
-        "controllers.console.explore.wraps.RecommendedAppService.is_trial_app_enabled",
-        return_value=False,
+    with (
+        patch(
+            "controllers.console.explore.wraps.RecommendedAppService.is_trial_app_enabled",
+            return_value=False,
+        ),
+        pytest.raises(Forbidden),
     ):
-        with pytest.raises(Forbidden):
-            view()
+        view()
 
 
 def test_trial_feature_enable_enabled():
